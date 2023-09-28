@@ -7,6 +7,7 @@ import br.com.flaberson.domain.models.CotacaoResponse;
 import br.com.flaberson.repositories.CotacaoRepository;
 import br.com.flaberson.rest.CotacoesClient;
 import io.quarkus.cache.CacheResult;
+import io.smallrye.mutiny.Uni;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -32,21 +33,17 @@ public class CotacaoRestService {
     private CotacaoMapper cotacaoMapper;
 
     @CacheResult(cacheName = "cotacoes-cache")
-    public CotacaoResponse getCotacao(String dataCotacao) {
+    public Uni<CotacaoResponse> getCotacao(String dataCotacao) {
 
         Optional<Cotacao> optionalCotacao = this.cotacaoRepository.findByDataCotacao(dataCotacao);
 
         if (optionalCotacao.isPresent()) {
-            return this.cotacaoMapper.toCotacaoResponse(optionalCotacao.get());
+            return Uni.createFrom().item(this.cotacaoMapper.toCotacaoResponse(optionalCotacao.get()));
         } else {
-            CotacaoDiaResponse cotacaoDiaResponse = cotacoesClient.getCotacao(this.toDataFormat(dataCotacao));
-            CotacaoResponse cotacaoResponse= this.toCotacaoResponse(cotacaoDiaResponse);
-
-            Cotacao cotacaoDao = toCotacao(dataCotacao, cotacaoResponse);
-
-            this.saveCotacao(cotacaoDao);
-
-            return cotacaoResponse;
+            return cotacoesClient.getCotacao(this.toDataFormat(dataCotacao))
+                    .map(this::toCotacaoResponse)
+                    .invoke(cotacao -> this.saveCotacao(toCotacao(dataCotacao, cotacao)))
+                    .onFailure().recoverWithNull();
         }
     }
 

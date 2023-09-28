@@ -6,13 +6,9 @@ import jakarta.inject.Inject;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Path("/cotacao")
 public class CotacoesResource {
-
-    private static final Logger log = LoggerFactory.getLogger(CotacoesResource.class);
 
     @Inject
     CotacaoRestService cotacaoRestService;
@@ -25,8 +21,10 @@ public class CotacoesResource {
     @Path("{dataCotacao}")
     public Response buscaCotacaoPorData(@PathParam("dataCotacao") String dataCotacao) {
 
+        var retorno = cotacaoRestService.getCotacao(dataCotacao);
+
         return Response.status(Response.Status.OK)
-                .entity(cotacaoRestService.getCotacao(dataCotacao))
+                .entity(retorno.await().indefinitely())
                 .build();
     }
 
