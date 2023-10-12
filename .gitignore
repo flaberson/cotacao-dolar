@@ -32,6 +32,6 @@ nb-configuration.xml
 .cache
 .envrc
 .jekyll-cache
-.mvn/.gradle-enterprise
+.mvn/
 .quarkus
 /volumes

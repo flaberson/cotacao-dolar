@@ -1,8 +1,28 @@
-version: '3.8'
+version: '3.9'
 services:
+  cotacao:
+    image: quarkus/cotacao-dolar-jvm
+    container_name: cotacao
+    ports:
+      - "8080:8080"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - cotacao
   mongodb:
     container_name: mongodb
     image: 'mongo:5.0.8-focal'
-    restart: always
     ports:
       - 27017:27017
+    networks:
+      - cotacao
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+networks:
+  cotacao:
+    driver: bridge
